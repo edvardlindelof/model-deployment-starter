@@ -1,0 +1,82 @@
+services:
+
+  app:
+    container_name: app
+    build: .
+    command: ["uv", "run", "start-app"]
+    environment:
+      MODEL_URI: "http://model:5001"
+    ports:
+      - "8000:8000"
+
+  model:
+    container_name: model
+    build: .
+    depends_on:
+      - mlflow
+    command: >
+      uv run mlflow models serve
+      --model-uri "models:/edvard-testar/latest"
+      --host 0.0.0.0
+      --port 5001
+      --env-manager local
+    environment:
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"
+      MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
+      AWS_ACCESS_KEY_ID: predadmin
+      AWS_SECRET_ACCESS_KEY: predadmin
+    ports:
+      - "5001:5001"
+
+  mlflow:
+    container_name: mlflow
+    image: ghcr.io/mlflow/mlflow:latest
+    depends_on:
+      - minio
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --no-serve-artifacts
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root s3://bucket/
+      --host 0.0.0.0
+      --port 5000
+      --allowed-hosts "localhost:5000,mlflow:5000"
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
+      AWS_ACCESS_KEY_ID: predadmin
+      AWS_SECRET_ACCESS_KEY: predadmin
+
+  minio-create-buckets:
+    container_name: minio-create-buckets
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      bash -c "
+      mc alias set minio http://minio:9000 predadmin predadmin &&
+      mc mb minio/bucket --ignore-existing
+      mc mb minio/dvcstore --ignore-existing
+      mc mb minio/mlartifacts --ignore-existing
+      "
+
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+    environment:
+      MINIO_ROOT_USER: predadmin
+      MINIO_ROOT_PASSWORD: predadmin
+    volumes:
+      - minio_data:/data
+
+volumes:
+  minio_data:
+  mlflow_data:

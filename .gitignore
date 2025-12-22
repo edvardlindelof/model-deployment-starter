@@ -1,0 +1,9 @@
+.env
+__pycache__
+*egg-info
+agent-memory
+scratch
+.vscode
+deploy.sh
+data/*
+!data/*/.gitkeep
