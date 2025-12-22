@@ -2,8 +2,10 @@ services:
 
   app:
     container_name: app
-    build: .
-    command: ["uv", "run", "start-app"]
+    build:
+      dockerfile: app.Dockerfile
+      context: .
+    command: python app.py
     environment:
       MODEL_URI: "http://model:5001"
     ports:
@@ -11,11 +13,13 @@ services:
 
   model:
     container_name: model
-    build: .
+    build:
+      dockerfile: model.Dockerfile
+      context: .
     depends_on:
       - mlflow
     command: >
-      uv run mlflow models serve
+      mlflow models serve
       --model-uri "models:/edvard-testar/latest"
       --host 0.0.0.0
       --port 5001
@@ -39,7 +43,7 @@ services:
       mlflow server
       --no-serve-artifacts
       --backend-store-uri sqlite:////mlflow/mlflow.db
-      --default-artifact-root s3://bucket/
+      --default-artifact-root s3://mlartifacts/
       --host 0.0.0.0
       --port 5000
       --allowed-hosts "localhost:5000,mlflow:5000"
@@ -57,7 +61,6 @@ services:
     entrypoint: >
       bash -c "
       mc alias set minio http://minio:9000 predadmin predadmin &&
-      mc mb minio/bucket --ignore-existing
       mc mb minio/dvcstore --ignore-existing
       mc mb minio/mlartifacts --ignore-existing
       "
