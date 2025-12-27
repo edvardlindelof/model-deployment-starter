@@ -1,40 +1,13 @@
 services:
 
-  app:
-    container_name: app
-    build:
-      dockerfile: app.Dockerfile
-      context: .
-    command: python app.py
-    environment:
-      MODEL_URI: "http://model:5001"
-    ports:
-      - "8000:8000"
-
-  model:
-    container_name: model
-    build:
-      dockerfile: model.Dockerfile
-      context: .
-    depends_on:
-      - mlflow
-    command: >
-      mlflow models serve
-      --model-uri "models:/edvard-testar/latest"
-      --host 0.0.0.0
-      --port 5001
-      --env-manager local
-    environment:
-      MLFLOW_TRACKING_URI: "http://mlflow:5000"
-      MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
-      AWS_ACCESS_KEY_ID: predadmin
-      AWS_SECRET_ACCESS_KEY: predadmin
-    ports:
-      - "5001:5001"
-
   mlflow:
     container_name: mlflow
-    image: ghcr.io/mlflow/mlflow:latest
+    profiles:
+      - tracking
+      - serving
+    build:
+      dockerfile: mlflow.Dockerfile
+      context: .
     depends_on:
       - minio
     ports:
@@ -51,9 +24,49 @@ services:
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
       AWS_ACCESS_KEY_ID: predadmin
       AWS_SECRET_ACCESS_KEY: predadmin
+    volumes:
+      - mlflow_data:/mlflow
+
+  prediction_service:
+    container_name: prediction_service
+    profiles:
+      - serving
+    build:
+      dockerfile: prediction_service.Dockerfile
+      context: .
+    depends_on:
+      - mlflow
+      - minio
+      - postgres
+    command: python prediction_service.py served-model latest
+    environment:
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"
+      MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
+      AWS_ACCESS_KEY_ID: predadmin
+      AWS_SECRET_ACCESS_KEY: predadmin
+      DATABASE_URL: "postgresql+asyncpg://predadmin:predadmin@postgres:5432/predlog"
+      TZ: "Europe/Stockholm"
+    ports:
+      - "8001:8001"
+
+  app:
+    container_name: app
+    profiles:
+      - serving
+    build:
+      dockerfile: app.Dockerfile
+      context: .
+    command: python app.py
+    environment:
+      PREDICTION_SERVICE_URI: "http://prediction_service:8001"
+    ports:
+      - "8000:8000"
 
   minio-create-buckets:
     container_name: minio-create-buckets
+    profiles:
+      - tracking
+      - serving
     image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
     depends_on:
       minio:
@@ -67,6 +80,9 @@ services:
 
   minio:
     container_name: minio
+    profiles:
+      - tracking
+      - serving
     image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
     ports:
       - "9000:9000"  # API
@@ -80,6 +96,22 @@ services:
     volumes:
       - minio_data:/data
 
+  postgres:
+    container_name: postgres
+    profiles:
+      - tracking
+      - serving
+    image: docker.io/library/postgres:18-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: predadmin
+      POSTGRES_PASSWORD: predadmin
+      POSTGRES_DB: predlog
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   minio_data:
   mlflow_data:
+  postgres_data:

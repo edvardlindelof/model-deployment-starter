@@ -5,28 +5,33 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 
-MODEL_URI = environ["MODEL_URI"]
+PREDICTION_SERVICE_URI = environ["PREDICTION_SERVICE_URI"]
+
+
+class PredictionRequest(BaseModel):
+    text: str
+
+class PredictionResponse(BaseModel):
+    label: str
+    score: float
 
 
 api = FastAPI()
-
-class PredictionRequest(BaseModel):
-    inputs: str
 
 @api.get("/health")
 async def health():
     return {"status": "ok"}
 
-@api.post("/predict")
+@api.post("/predict", response_model=PredictionResponse)
 async def predict(request: PredictionRequest):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{MODEL_URI}/invocations",
-            json={"inputs": request.inputs},
+            f"{PREDICTION_SERVICE_URI}/predict",
+            #json={"text": request.inputs},
+            json=request.model_dump(),
             headers={"Content-Type": "application/json"},
         )
         return response.json()
-    # return {"prediction": "result_here", "input": request.inputs}
 
 @api.get("/")
 async def index():
@@ -48,7 +53,7 @@ async def index():
                     const r = await fetch('/predict', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({inputs: document.getElementById('input').value})
+                        body: JSON.stringify({text: document.getElementById('input').value})
                     });
                     const d = await r.json();
                     console.log(d);

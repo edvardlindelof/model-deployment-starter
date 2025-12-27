@@ -16,9 +16,9 @@ These are the tool installation steps for Ubuntu.
   echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
   ```
 - Docker: [Get Docker](https://docs.docker.com/get-started/get-docker/)
-- docker-compose:
+- docker compose:
   ```bash
-  sudo apt install docker.io docker-compose
+  sudo apt install docker-compose-plugin
   ```
 - DVC:
   ```bash
@@ -27,5 +27,5 @@ These are the tool installation steps for Ubuntu.
 
 ## Run
 ```bash
-docker-compose up
+docker compose up
 ```
