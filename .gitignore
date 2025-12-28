@@ -5,5 +5,3 @@ agent-memory
 scratch
 .vscode
 deploy.sh
-data/*
-!data/*/.gitkeep

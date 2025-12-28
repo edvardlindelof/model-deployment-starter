@@ -22,10 +22,23 @@ These are the tool installation steps for Ubuntu.
   ```
 - DVC:
   ```bash
-  uv tool install dvc
+  uv tool install dvc[s3]
   ```
 
 ## Run
 ```bash
-docker compose up
+cp .env.local .env
+direnv allow
 ```
+
+```bash
+docker compose --profile tracking up -d
+docker compose --profile serving up -d
+```
+
+## Version controlling data
+- install with `dvc install`
+- store data in data/
+- track added and changed files with `dvc add data/<the file>`
+- pull/push changes from/to the MinIO service with `dvc pull` and `dvc push`
+- the copy of the files in data/ are automatically kept in sync with the checked out git commit through pre-commit hooks
