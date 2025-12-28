@@ -1,0 +1,5 @@
+outs:
+- md5: c1ad5e7ed7bad823942b861550500eb6
+  size: 4361
+  hash: md5
+  path: swedish_sentiment_test.jsonl

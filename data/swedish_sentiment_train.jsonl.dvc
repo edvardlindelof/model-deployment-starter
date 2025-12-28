@@ -1,0 +1,5 @@
+outs:
+- md5: 9a7c59cedc9c34f143939b2cc3be4230
+  size: 4270
+  hash: md5
+  path: swedish_sentiment_train.jsonl
