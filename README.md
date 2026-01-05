@@ -9,18 +9,21 @@ This is intended as a starter-setup for developing and deploying AI/ML models in
 For the case that a small ML team look to engineer their own datasets to deploy a small number of prediction models for use by a small number of consumers, it is a reasonably production-ready setup.
 
 Content:
-- Python package for code shared between services and experimentation notebooks (models/)
-- containerized services (docker-compose.yaml)
-  - MLflow setup with S3
+- **models/**: a Python package for code used by both services and experimentation notebooks
+  - training code for BERT-based classifiers
+  - code for monitoring data drift
+- **services/** (and docker-compose.yaml): containerized services
+  - MLflow set up with S3
   - prediction service hosting a deployed model
   - simplistic monitoring service
-  - proof-of-concept web app invoking the deployed model
-- sample model experimentation using the infra and code (notebooks/)
-  - iteratively engineered, versioned data
+  - proof-of-concept web app invoking a deployed model
+- **notebooks/**: sample model experimentation integrated with services and code package
   - tracked training of a BERT-based classifier for swedish sentiment classification
   - development of data drift detection
   - adhoc calibration analysis of deployed model
-- DVC setup with S3 and Git sync (.dvc/ and data/)
+- **.dvc/** (and data/): DVC setup
+  - synced with S3 and Git
+  - containing a small example (200 texts) of iteratively simulated, versioned data
 
 ## Setup
 These are the tool installation steps for Ubuntu:

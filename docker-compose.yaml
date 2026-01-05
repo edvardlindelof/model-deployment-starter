@@ -6,7 +6,7 @@ services:
       - tracking
       - serving
     build:
-      dockerfile: mlflow.Dockerfile
+      dockerfile: services/mlflow.Dockerfile
       context: .
     depends_on:
       - minio
@@ -32,13 +32,13 @@ services:
     profiles:
       - serving
     build:
-      dockerfile: prediction_service.Dockerfile
+      dockerfile: services/prediction_service.Dockerfile
       context: .
     depends_on:
       - mlflow
       - minio
       - postgres
-    command: python prediction_service.py served-model
+    command: python services/prediction_service.py served-model
     environment:
       MLFLOW_TRACKING_URI: "http://mlflow:5000"
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
@@ -54,7 +54,7 @@ services:
     profiles:
       - monitoring
     build:
-      dockerfile: monitoring_service.Dockerfile
+      dockerfile: services/monitoring_service.Dockerfile
       context: .
     # NB: for production, the while-true sleep should be replaced with proper
     # scheduling through e.g. host cron, k8s CronJob or Cloud Scheduler
@@ -63,7 +63,7 @@ services:
       - -c
       - |
         while true; do
-          uv run --only-group monitoring python monitoring_service.py \
+          uv run --only-group monitoring python services/monitoring_service.py \
             served-model \
             --lookback-days 7 \
             --thresholds '{"length": 0.1, "fraction_out_of_vocab": 0.1}'
@@ -80,9 +80,9 @@ services:
     profiles:
       - serving
     build:
-      dockerfile: app.Dockerfile
+      dockerfile: services/app.Dockerfile
       context: .
-    command: python app.py
+    command: python services/app.py
     environment:
       PREDICTION_SERVICE_URI: "http://prediction_service:8001"
     ports:
