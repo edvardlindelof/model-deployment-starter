@@ -38,7 +38,7 @@ services:
       - mlflow
       - minio
       - postgres
-    command: python prediction_service.py served-model latest
+    command: python prediction_service.py served-model
     environment:
       MLFLOW_TRACKING_URI: "http://mlflow:5000"
       MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
@@ -48,6 +48,32 @@ services:
       TZ: "Europe/Stockholm"
     ports:
       - "8001:8001"
+
+  monitoring_service:
+    container_name: monitoring_service
+    profiles:
+      - monitoring
+    build:
+      dockerfile: monitoring_service.Dockerfile
+      context: .
+    # NB: for production, the while-true sleep should be replaced with proper
+    # scheduling through e.g. host cron, k8s CronJob or Cloud Scheduler
+    command:
+      - sh
+      - -c
+      - |
+        while true; do
+          uv run --only-group monitoring python monitoring_service.py \
+            served-model \
+            --lookback-days 7 \
+            --thresholds '{"length": 0.1, "fraction_out_of_vocab": 0.1}'
+          sleep $((7 * 24 * 60 * 60))
+        done
+    environment:
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"
+      DATABASE_URL: "postgresql+psycopg2://predadmin:predadmin@postgres:5432/predlog"
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      SLACK_CHANNEL: ${SLACK_CHANNEL}
 
   app:
     container_name: app

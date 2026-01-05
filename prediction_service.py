@@ -16,14 +16,16 @@ parser = argparse.ArgumentParser(
     description="Service of MLflow-logged prediction model with logging"
 )
 parser.add_argument("model", help="Model name in MLflow")
-parser.add_argument("version", help="Model version (e.g., '1', 'latest')")
+# TODO support using other version than latest
+# parser.add_argument("version", help="Model version (e.g., '1', 'latest')")
 args = parser.parse_args()
 
 MLFLOW_TRACKING_URI = environ["MLFLOW_TRACKING_URI"]
 DATABASE_URL = environ["DATABASE_URL"]
 
 MODEL_NAME = args.model
-MODEL_VERSION = args.version
+# MODEL_VERSION = args.version
+MODEL_VERSION = "latest"
 MODEL_URI = f"models:/{MODEL_NAME}/{MODEL_VERSION}"
 
 

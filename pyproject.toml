@@ -23,11 +23,18 @@ models = [
     "boto3>=1.42.14",
     "pip-system-certs>=5.2",
 ]
+monitoring = [
+    "mlflow>=3.7.0",
+    "pandas>=2.3.3",
+    "scipy>=1.16.3",
+    "slack-sdk>=3.39.0",
+    "sqlalchemy>=2.0.45",
+    "psycopg2-binary>=2.9.11",
+]
 dev = [
     "duckdb>=1.4.3",
     "jupyter>=1.1.1",
     "pre-commit>=4.5.1",
-    "psycopg2-binary>=2.9.11",
 ]
 
 [tool.uv]
